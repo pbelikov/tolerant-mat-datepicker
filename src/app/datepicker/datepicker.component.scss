@@ -1,0 +1,19 @@
+.date {
+  &--enabled {
+
+  }
+
+  &--disabled {
+    display: none;
+  }
+}
+
+.invalid-date-holder {
+  &--enabled {
+
+  }
+
+  &--disabled {
+    display: none;
+  }
+}

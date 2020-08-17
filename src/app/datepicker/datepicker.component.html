@@ -1,17 +1,17 @@
 <mat-form-field>
   <input matInput [matDatepicker]="datePicker"
-         (change)="pickerInputChange($event)"
-         (dateChange)="pickerDateChange($event)"
+
+         (change)="setValue($event.target.value)"
+         (dateChange)="setValue($event.value)"
          (focus)="datePicker.open()"
-         #dateInput
          [value]="value"
-         [ngClass]="valid ? 'date-pickjer--enabled' : 'date--disabled'"
+         [ngClass]="valid ? 'date-picker--enabled' : 'date--disabled'"
          [disabled]="isDisabled"
          [max]="maxDate"
          [min]="minDate"
   />
   <input matInput
-         (change)="erroneousPickerInputChange($event)"
+         (change)="setValue($event.target.value)"
          (focus)="datePicker.open()"
          [value]="value"
          [ngClass]="valid ? 'invalid-date-holder--disabled' : 'invalid-date-holder--enabled'"

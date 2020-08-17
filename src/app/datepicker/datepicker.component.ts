@@ -9,6 +9,9 @@ import {
 } from '@angular/core';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {BehaviorSubject, Observable, Subject, Subscription} from 'rxjs';
+import {distinctUntilChanged, skip, startWith, takeUntil} from 'rxjs/operators';
+import {DatePickerValue} from './datepicker.interfaces';
 
 @Component({
   selector: 'app-tolerant-datepicker',
@@ -24,8 +27,6 @@ import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR} from '@angular/for
   ]
 })
 export class DatepickerComponent implements OnInit, OnDestroy, ControlValueAccessor {
-  @ViewChild('dateInput', { static: true }) dateInput: ElementRef;
-
   @Input() maxDate: Date;
   @Input() minDate: Date;
 
@@ -36,7 +37,8 @@ export class DatepickerComponent implements OnInit, OnDestroy, ControlValueAcces
   }
 
   set value(value: string | Date) {
-    this._valid = this._isValueValidAsDate(value);
+    this._valid = this._isValueValid(value);
+    this._validAsDate = this._isValueValidAsDate(value);
     this._value = this._valid ? new Date(value) : value;
 
     this._changeDetectorRef.markForCheck();
@@ -46,56 +48,78 @@ export class DatepickerComponent implements OnInit, OnDestroy, ControlValueAcces
     return this._valid;
   }
 
-  private _value: string | Date;
+  private _value: DatePickerValue = null;
   private _valid = true;
+  private _validAsDate = true;
 
-  private _onChangeCallback = (value: string | Date) => {};
-  private _onTouchedCallback = () => {};
 
-  constructor(private _changeDetectorRef: ChangeDetectorRef) { }
+  private _valueSubscription: Subscription;
+  private readonly _value$: BehaviorSubject<DatePickerValue>;
+  private readonly _destroyed$: Subject<void>;
+
+  private _onChange = (value: DatePickerValue) => {};
+  private _onTouched = () => {};
+
+  constructor(private _changeDetectorRef: ChangeDetectorRef) {
+    this._valueSubscription = new Subscription();
+    this._value$ = new BehaviorSubject(null);
+    this._destroyed$ = new Subject();
+  }
 
   ngOnInit(): void {
-
+    this._subscribeOnValue();
   }
 
   ngOnDestroy(): void {
+    this._destroyed$.next();
+    this._destroyed$.complete();
   }
 
-
   registerOnChange(fn: any): void {
-    this._onChangeCallback = fn;
+    this._onChange = fn;
   }
 
   registerOnTouched(fn: any): void {
-    this._onTouchedCallback = fn;
+    this._onTouched = fn;
   }
 
   setDisabledState(isDisabled: boolean): void {
     this.isDisabled = isDisabled;
   }
 
-  writeValue(value: string | Date, isModelUpdated?: boolean): void {
-    this.value = value;
+  writeValue(value: DatePickerValue, isModelUpdated?: boolean): void {
+    this._value$.next(value);
   }
 
-  pickerInputChange({ target }: Event): void {
-    this._setValue((target as HTMLInputElement).value);
+  setValue(value: string | Date): void {
+    this.writeValue(value);
   }
 
-  pickerDateChange({ value }: MatDatepickerInputEvent<Date>): void {
-    this._setValue(value);
+  private _subscribeOnValue(): void {
+    this._valueSubscription = this._value$
+      .pipe(
+        skip(2),
+        distinctUntilChanged(),
+        takeUntil(this._destroyed$)
+      )
+      .subscribe(value => {
+        this.value = value;
+        this._onChange(this.value);
+      });
   }
 
-  erroneousPickerInputChange(event: Event): void {
-    this.pickerInputChange(event);
+  private _isValueValidAsDate(value: DatePickerValue): boolean {
+    // Just a simple check if value is Date after conversion
+    return value instanceof Date || new Date(value).toString() !== 'Invalid Date';
   }
 
-  private _setValue(value: string | Date): void {
-    this.value = value;
-    this._onChangeCallback(this.value);
-  }
+  private _isValueValid(value: DatePickerValue): boolean {
+    // Check 1: is it date?
+    if (!this._isValueValidAsDate(value)) {
+      return false;
+    }
 
-  private _isValueValidAsDate(value: string | Date): boolean {
-    return new Date(value).toString() !== 'Invalid Date';
+    // Check 2: is it valid by min/max constraints?
+    return (this.minDate ? value >= this.minDate : true) && (this.maxDate ? value <= this.maxDate : true);
   }
 }

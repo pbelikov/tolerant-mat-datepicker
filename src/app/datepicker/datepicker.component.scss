@@ -1,19 +1,24 @@
-.date {
-  &--enabled {
-
-  }
-
-  &--disabled {
-    display: none;
-  }
+@mixin invalid-value {
+  color: red;
 }
 
-.invalid-date-holder {
-  &--enabled {
-
+.date-picker {
+  &__picker {
+    &--hidden {
+      display: none;
+    }
   }
 
-  &--disabled {
-    display: none;
+  &__stub {
+    &--hidden {
+      display: none;
+    }
+  }
+
+  &__picker,
+  &__stub {
+    &--invalid {
+      @include invalid-value();
+    }
   }
 }

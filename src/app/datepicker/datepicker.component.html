@@ -1,11 +1,10 @@
 <mat-form-field>
   <input matInput [matDatepicker]="datePicker"
-
          (change)="setValue($event.target.value)"
          (dateChange)="setValue($event.value)"
          (focus)="datePicker.open()"
          [value]="value"
-         [ngClass]="valid ? 'date-picker--enabled' : 'date--disabled'"
+         [ngClass]="{ 'date-picker__picker--hidden': !validAsDate, 'date-picker__picker--invalid': !valid}"
          [disabled]="isDisabled"
          [max]="maxDate"
          [min]="minDate"
@@ -14,7 +13,7 @@
          (change)="setValue($event.target.value)"
          (focus)="datePicker.open()"
          [value]="value"
-         [ngClass]="valid ? 'invalid-date-holder--disabled' : 'invalid-date-holder--enabled'"
+         [ngClass]="{ 'date-picker__stub--hidden': validAsDate, 'date-picker__stub--invalid': !valid }"
          [disabled]="isDisabled" />
   <mat-datepicker-toggle matSuffix (click)="datePicker.open()"></mat-datepicker-toggle>
   <mat-datepicker #datePicker></mat-datepicker>

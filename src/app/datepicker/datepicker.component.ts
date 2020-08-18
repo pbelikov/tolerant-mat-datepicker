@@ -38,14 +38,18 @@ export class DatepickerComponent implements OnInit, OnDestroy, ControlValueAcces
 
   set value(value: string | Date) {
     this._valid = this._isValueValid(value);
-    this._validAsDate = this._isValueValidAsDate(value);
-    this._value = this._valid ? new Date(value) : value;
+    this._validAsDate = this._isValuePotentialDate(value);
+    this._value = this._validAsDate ? new Date(value) : value;
 
     this._changeDetectorRef.markForCheck();
   }
 
   get valid(): boolean {
     return this._valid;
+  }
+
+  get validAsDate(): boolean {
+    return this._validAsDate;
   }
 
   private _value: DatePickerValue = null;
@@ -108,18 +112,19 @@ export class DatepickerComponent implements OnInit, OnDestroy, ControlValueAcces
       });
   }
 
-  private _isValueValidAsDate(value: DatePickerValue): boolean {
-    // Just a simple check if value is Date after conversion
-    return value instanceof Date || new Date(value).toString() !== 'Invalid Date';
+  private _isValuePotentialDate(value: DatePickerValue): boolean {
+    if (!value) {
+      return true;
+    }
+
+    return value instanceof Date && !isNaN((value as Date).getTime());
   }
 
   private _isValueValid(value: DatePickerValue): boolean {
-    // Check 1: is it date?
-    if (!this._isValueValidAsDate(value)) {
+    if (!this._isValuePotentialDate(value)) {
       return false;
     }
 
-    // Check 2: is it valid by min/max constraints?
     return (this.minDate ? value >= this.minDate : true) && (this.maxDate ? value <= this.maxDate : true);
   }
 }
